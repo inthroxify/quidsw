@@ -1,0 +1,2 @@
+# load the QUick IDentity SWitcher
+if [ -f ~/thequidsw/.quidswrc ]; then . ~/thequidsw/.quidswrc; fi

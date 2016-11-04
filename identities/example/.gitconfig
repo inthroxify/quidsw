@@ -1,0 +1,3 @@
+# use the file "gitconfig" instead of this one
+[include]
+    path = ./gitconfig

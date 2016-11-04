@@ -1,0 +1,57 @@
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+if [ -f $DIR/.completionsupportrc ]; then . $DIR/.completionsupportrc; fi
+
+# augment git's version of the ssh command
+export GIT_SSH="$DIR/ssh-git.sh"
+
+# blank these out so git complains when we try to commit, forcing us to choose an identity
+export GIT_AUTHOR_NAME=''
+export GIT_AUTHOR_EMAIL=''
+export GIT_COMMITTER_NAME=${!GIT_AUTHOR_NAME}
+export GIT_COMMITTER_EMAIL=${!GIT_AUTHOR_EMAIL}
+
+IDENTITIES_PATH="$DIR/identities"
+
+_quidsw() {
+	COMPREPLY=()
+	if [ ! -d "$IDENTITIES_PATH" ]; then
+		echo "ERR: identies directory \"$IDENTITIES_PATH\" is not found."
+		return;
+	fi
+	if [ $COMP_CWORD -eq 1 ] && [ -d "$IDENTITIES_PATH" ]; then
+		local cur=${COMP_WORDS[COMP_CWORD]}
+		local possible=`find $IDENTITIES_PATH -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | tr '\n' ' '`
+		# trim whitespace so that <nothing> is not an option
+		possible="${possible%"${possible##*[![:space:]]}"}"
+		#echo "DEBUG:" `compgen -W "$possible" -- $cur`
+		COMPREPLY=( $(compgen -W "$possible" -- $cur) )
+	fi
+	if [ $COMP_CWORD -eq 2 ] && [ -z "${COMP_WORDS[COMP_CWORD]}" ]; then
+		# odds are the user is going to use this for git, so make it the default suggestion
+		COMPREPLY=(git)
+	fi
+	if [ $COMP_CWORD -gt 2 ]; then
+		# after an identity is chosen, defer to the subseqent application's autocomplete resolvers
+		_command_offset 2
+	fi
+
+}
+complete -F _quidsw quidsw
+
+function quidsw() {
+	local IDENTITY_PATH="$IDENTITIES_PATH/$1"
+
+	if [ -z "$1" ] || [ ! -d "$IDENTITY_PATH" ]; then
+		echo "ERR: Identity \"$1\" not found in \"$IDENTITIES_PATH\"";
+		return;
+	fi
+	shift 1
+	HOME=$IDENTITY_PATH SSHCONF=$IDENTITY_PATH/sshconfig $@
+}
+
+# optional shortcuts
+#alias me=quidsw me
+#alias work=quidsw work
+
+#echo "QUick IDentity SWitcher loaded."
