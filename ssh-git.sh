@@ -5,7 +5,6 @@ if ! [ -z "$PKEY" ]; then
 fi
 
 if ! [ -z "$SSHCONF" ]; then
-	CMDARGS="${CMDARGS} -F \"$SSHCONF\""
+	CMDARGS="${CMDARGS} -F $SSHCONF"
 fi
-
 ssh $CMDARGS "$@"
